@@ -1,0 +1,311 @@
+#install.packages("rJava")
+#Sys.setenv(JAVA_HOME="~/renv/local/Java/jre1.8.0_291")
+#library("rJava")
+
+pkgs <- c("purrr", "data.table", "dplyr", "tidyr", "readr", "lubridate", "stylo", "tsne", "ggplot2", "igraph", "intergraph", "ggnetwork", "stringr", "ggrepel", "ggiraph", "ggthemes", "viridisLite", "scales", "grid", "gtable", "FactoMineR", "tidytext", "wordcloud", "extrafont", "textcat", "Hmisc", "openNLP", "ggfortify", "gplots", "fpc", "dendsort", "seriation", "quanteda", "reshape2")
+install.packages(pkgs)
+
+allLoaded <- sapply(pkgs, require, character.only = TRUE)
+
+basePath <- "/work/files/workspace/Stylo/speeches"
+files <- dir(basePath, full.names = TRUE)
+speechList <- c()
+for (f in files) {speechList <- c(speechList, paste(readLines(f), collapse = "\n"))}
+
+speechListClean <- speechList %>% 
+      map(~ gsub("^\\s+|\\s+$", "", .x)) %>% # Removing leading & trailing whitespace
+			map(~ gsub("\\t|\\r|\\n", " ", .x)) %>%	 # Removing tab/return/newline spaces		
+			map(~ gsub("Bizleri", "", .x, ignore.case = TRUE)) %>% # Removing unrequired addresses
+			map(~ gsub("Sizleri", "", .x, ignore.case = TRUE)) %>%
+			map(~ gsub("Değerli *", "", .x, ignore.case = TRUE)) %>%	
+			map(~ gsub("Saygıdeğer *", "", .x, ignore.case = TRUE)) %>%
+			map(~ gsub("Sayın *", "", .x, ignore.case = TRUE)) %>%
+			map(~ gsub("Kıymetli *", "", .x, ignore.case = TRUE)) %>%
+			map(~ gsub("Sevgili *", "", .x, ignore.case = TRUE)) %>%
+			map(~ gsub("\\.", " fullstop ", .x)) %>%					# Textualising a ., to later convert it back
+			map(~ gsub(",", " comma ", .x)) %>%						# Textualising a , to later convert it back
+			map(~ gsub(";", " semicolon ", .x)) %>%						# Textualising a ;
+			map(~ gsub(":", " colon ", .x)) %>%						# Textualising a :
+			map(~ gsub("[^[:alnum:]+]", " ", .x)) %>% 					# Remove characters apart from alpha-numeric
+			map(~ gsub("[[:digit:]]+", "", .x)) %>%						# Remove digits
+			#map(~ gsub(pronounList, "", .x, ignore.case = TRUE)) %>%			# Should probably remove some/all pronouns
+			map(~ gsub(" fullstop ", " \\. ", .x)) %>%					# Adding the . back in
+			map(~ gsub(" comma ", " , ", .x)) %>%						# Adding the , back in
+			map(~ gsub(" semicolon ", " ; ", .x)) %>%					# Adding the ; back in
+			map(~ gsub(" colon ", " : ", .x)) %>%						# Adding the : back in
+			map(~ gsub("\\s+", " ", .x)) %>%						# Remove extra whitespace
+			map(~ gsub("^\\s+|\\s+$", "", .x)) %>%					# Removing leading & trailing whitespace again
+			map(~ tolower(.x))	%>%	# Making text lowercase
+			map(~ gsub("^[[:lower:]]{1,2}\\s", "", .x)) %>%
+			map(~ gsub("^[[:punct:]]{1}\\s", "", .x))	%>%
+			map(~ gsub("^[[:lower:]]{1,2}\\s", "", .x)) %>%
+			map(~ gsub("^[[:punct:]]{1}\\s", "", .x))	
+
+speechListClean1 <- speechListClean[1:199]
+speechListClean2 <- speechListClean[200:398]
+
+allFilesName <- list.files(path=basePath)
+names(speechListClean1) <- allFilesName[1:199]
+names(speechListClean2) <- allFilesName[200:398]
+
+names(speechListClean) <- allFilesName
+
+g1_1 <- 
+data.frame(name = names(speechListClean1), speech = unlist(speechListClean1), stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = word, input = speech) %>%
+		group_by(name) %>%
+		summarise(`Уникальные слова` = length(unique(word)), `Все слова` = length(word)) %>%
+		ungroup() %>%
+		gather(variable, value, -name) %>%
+		arrange(name) %>%
+		ggplot(aes(x = factor(name, ordered = TRUE), y = value, fill = variable)) +
+		geom_bar(stat = "identity", position = "dodge") +
+		scale_fill_manual(values = c("#005A31", "#A8CD1B"), name = "") +
+		scale_y_continuous(label = comma, breaks = pretty_breaks(5), limits = c(0,8000)) +
+		xlab("Номер речи") + ylab("") +
+		ggtitle("Сколько слов президент Турции использует в своих речах?\n") +
+		theme_bw() +
+		theme(legend.position = c(0.09,1.027), legend.direction = "horizontal",
+			legend.text = element_text(size = rel(1.1)), 
+			text = element_text(family = "Calibri", colour = "grey30"), 
+			plot.title = element_text(hjust = 0, family = "Garamond", size = rel(2)),
+			panel.grid = element_blank(),
+			panel.border = element_blank(),
+			axis.text.y = element_text(size = rel(1)),
+			axis.text.x = element_text(angle = 90, hjust = 0, size = rel(1)))
+
+ggsave(paste("/work/files/workspace/Stylo", "Graphs", "g1_1.png", sep = "/"), plot = g1_1, height = 10, width = 40, units='in', dpi=600, limitsize = FALSE)
+
+g1_2 <- 
+data.frame(name = names(speechListClean2), speech = unlist(speechListClean2), stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = word, input = speech) %>%
+		group_by(name) %>%
+		summarise(`Уникальные слова` = length(unique(word)), `Все слова` = length(word)) %>%
+		ungroup() %>%
+		gather(variable, value, -name) %>%
+		arrange(name) %>%
+		ggplot(aes(x = factor(name, ordered = TRUE), y = value, fill = variable)) +
+		geom_bar(stat = "identity", position = "dodge") +
+		scale_fill_manual(values = c("#005A31", "#A8CD1B"), name = "") +
+		scale_y_continuous(label = comma, breaks = pretty_breaks(5), limits = c(0,8000)) +
+		xlab("Номер речи") + ylab("") +
+		ggtitle("Сколько слов президент Турции использует в своих речах?\n") +
+		theme_bw() +
+		theme(legend.position = c(0.09,1.027), legend.direction = "horizontal",
+			legend.text = element_text(size = rel(1.1)), 
+			text = element_text(family = "Calibri", colour = "grey30"), 
+			plot.title = element_text(hjust = 0, family = "Garamond", size = rel(2)),
+			panel.grid = element_blank(),
+			panel.border = element_blank(),
+			axis.text.y = element_text(size = rel(1)),
+			axis.text.x = element_text(angle = 90, hjust = 0, size = rel(1)))
+
+ggsave(paste("/work/files/workspace/Stylo", "Graphs", "g1_2.png", sep = "/"), plot = g1_2, height = 10, width = 40, units='in', dpi=600, limitsize = FALSE)
+
+
+#####
+
+g2_1 <- 
+data.frame(name = names(speechListClean1), speech = unlist(speechListClean1), stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = sentence, input = speech, token = "regex", pattern = "\\.") %>%
+		mutate(totalCharSentence = str_count(sentence, "\\S+")) %>%
+		group_by(name) %>%
+		summarise(`Медиана количества слов в предложении` = median(totalCharSentence), `Среднее количества слов в предложении` = mean(totalCharSentence)) %>%
+		gather(variable, value, -name) %>%
+		arrange(name) %>%
+		ggplot(aes(x = factor(name), y = value, group = variable, colour = variable)) +
+		geom_line() +
+		scale_colour_manual(values = c("#005A31", "#A8CD1B"), name = "") +
+		scale_y_continuous(label = comma, breaks = seq(8.0, 24.0, by=2), limits = c(8.0, 24.0)) +
+		xlab("Номер речи") + ylab("") +
+		ggtitle("Сколько слов в предложениях турецкого президента?\n") +
+		theme_bw() +
+		theme(legend.position = c(0.165,1.027), legend.direction = "horizontal",
+			legend.text = element_text(size = rel(1.1)), 
+			text = element_text(family = "Calibri", colour = "grey30"), 
+			plot.title = element_text(hjust = 0, family = "Garamond", size = rel(2)),
+			panel.grid = element_blank(),
+			panel.border = element_blank(),
+			axis.text.y = element_text(size = rel(1)),
+			axis.text.x = element_text(angle = 90, hjust = 0, size = rel(1)))
+
+ggsave(paste("/work/files/workspace/Stylo", "Graphs", "g2_1.png", sep = "/"), plot = g2_1, height = 10, width = 40, units='in', dpi=600, limitsize = FALSE)
+
+g2_2 <- 
+data.frame(name = names(speechListClean2), speech = unlist(speechListClean2), stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = sentence, input = speech, token = "regex", pattern = "\\.") %>%
+		mutate(totalCharSentence = str_count(sentence, "\\S+")) %>%
+		group_by(name) %>%
+		summarise(`Медиана количества слов в предложении` = median(totalCharSentence), `Среднее количества слов в предложении` = mean(totalCharSentence)) %>%
+		gather(variable, value, -name) %>%
+		arrange(name) %>%
+		ggplot(aes(x = factor(name), y = value, group = variable, colour = variable)) +
+		geom_line() +
+		scale_colour_manual(values = c("#005A31", "#A8CD1B"), name = "") +
+		scale_y_continuous(label = comma, breaks = seq(8.0, 24.0, by=2), limits = c(8.0, 24.0)) +
+		xlab("Номер речи") + ylab("") +
+		ggtitle("Сколько слов в предложениях турецкого президента?\n") +
+		theme_bw() +
+		theme(legend.position = c(0.165,1.027), legend.direction = "horizontal",
+			legend.text = element_text(size = rel(1.1)), 
+			text = element_text(family = "Calibri", colour = "grey30"), 
+			plot.title = element_text(hjust = 0, family = "Garamond", size = rel(2)),
+			panel.grid = element_blank(),
+			panel.border = element_blank(),
+			axis.text.y = element_text(size = rel(1)),
+			axis.text.x = element_text(angle = 90, hjust = 0, size = rel(1)))
+
+ggsave(paste("/work/files/workspace/Stylo", "Graphs", "g2_2.png", sep = "/"), plot = g2_2, height = 10, width = 40, units='in', dpi=600, limitsize = FALSE)
+
+
+
+#####
+
+speech = unlist(speechListClean)
+extractPOS <- function(speech){
+	speechString <- as.String(speech)
+	sent_token_annotator <- Maxent_Sent_Token_Annotator()
+	word_token_annotator <- Maxent_Word_Token_Annotator()
+	pos_tag_annotator <- Maxent_POS_Tag_Annotator()
+
+	annotatedSpeech <- annotate(speechString, list(sent_token_annotator, word_token_annotator))
+	posAnnotatedSpeech <- annotate(speechString, pos_tag_annotator, annotatedSpeech)
+
+	posTags <- posAnnotatedSpeech$features %>%
+				map("POS") %>%
+				unlist %>%
+				paste(collapse = " ")
+	return(posTags)
+}
+-----
+speechPosTags <- speechListClean %>%
+			map(~ extractPOS(speech = .x))
+
+speechPosTagsClean <- speechPosTags %>%
+				map(~ gsub("[[:punct:]]+", "", .x)) %>%
+				map(~ gsub("^\\s+|\\s+$", "", .x)) %>%
+				map(~ gsub("\\s+", " ", .x))
+
+#saveRDS(speechPosTagsClean, file="/work/files/workspace/Stylo/speechPosTags.RDS")
+speechPosTagsClean <- readRDS("/work/files/workspace/Stylo/speechPosTags.RDS")
+######
+topPosFreq <- data.frame(name = names(speechListClean), speechPosTags = unlist(speechPosTagsClean), stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = pos, input = speechPosTags, token = "ngrams", n = 2) %>%
+		group_by(pos) %>%
+		summarise(posFreq = n()) %>%
+		arrange(-posFreq) %>%
+		head(50) %>%
+		select(pos) %>%
+		unlist %>%
+		unname
+
+topPosDoc <- data.frame(name = names(speechListClean),
+			speechPosTags = unlist(speechPosTagsClean), 
+			stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = pos, input = speechPosTags, token = "ngrams", n = 2) %>%
+		group_by(pos) %>%
+		summarise(appearInDocs = length(unique(name))) %>%
+		arrange(-appearInDocs) %>%
+		filter(appearInDocs/max(appearInDocs) >= .5) %>% 
+		select(pos) %>%
+		unlist %>%
+		unname
+
+posToUse <- union(topPosFreq, topPosDoc)
+
+# I need 30 features for use in dissimilarity calculation for 1st batch, cumulatively summing up to 150 total features for the final batch
+featToUse <- 30
+noOfBatch <- length(posToUse)/featToUse
+splitAt <- as.list(cumsum(rep(featToUse, times = noOfBatch)))
+
+# Function to split our data set into batches
+splitDfBatch <- function(toIncludeLen, posTags, df){
+colsInd <- seq(from = 1, by = 1, to = toIncludeLen)
+colsToUse <- gsub("\\s+", "\\.", posTags[colsInd])
+dfBatch <- df[, names(df) %in% colsToUse]
+return(dfBatch)
+}
+
+
+posBgDf <- data.frame(name = names(speechListClean),
+			speechPosTags = unlist(speechPosTagsClean), 
+			stringsAsFactors = FALSE) %>%
+		unnest_tokens(output = pos, input = speechPosTags, token = "ngrams", n = 2) %>%
+		group_by(name, pos) %>%
+		summarise(posFreq = n()) %>%
+		ungroup %>%
+		spread(pos, posFreq, fill = 0) %>%
+		data.frame
+row.names(posBgDf) <- posBgDf$name
+
+
+
+posBgDfBatches <- 
+		map(.x = splitAt, .f = splitDfBatch, posTags = posToUse, df = posBgDf) %>%
+		map(.x = ., .f = as.matrix) %>%
+		map(.x = ., .f = scale, center = TRUE, scale = TRUE) %>%
+		map(.x = ., .f = dist.cosine) %>%
+		map(.x = ., .f = as.matrix) %>%
+		map(.x = ., .f = melt) %>%
+		map2(.x = ., .y = setNames(as.list(seq(from = 1, to = noOfBatch)), nm = rep("batch", times = noOfBatch)), .f = mutate) %>%
+		map(.f = function(x) filter(x, Var1 != Var2)) %>%
+		map(.f = function(x) group_by(.data = x, Var1)) %>%
+		map(.f = function(x) top_n(x, n = -5, wt = value)) %>%
+		rbindlist %>%
+		rename(doc1 = Var1, doc2 = Var2, distance = value, batch = 4) %>%
+    arrange(doc1, batch, distance) %>%
+    ungroup %>%
+    setDT
+		
+simDf <- posBgDfBatches[
+	][, presentInBatch := length(unique(batch)), by = .(doc1, doc2)
+	][presentInBatch >= 2
+	][, .(avgDistance = mean(distance)), by = .(doc1, doc2)
+	][, avgSimilarity := 1/avgDistance
+	][, .(doc1, doc2, avgSimilarity)]
+
+verticesDf <- data.frame(name = names(speechListClean), stringsAsFactors = FALSE) %>%
+	mutate(speechCode = sprintf("%s - %d", "Speech", seq_along(name))) %>%
+	setDT
+	
+	
+set.seed(1234)
+g1 <- graph_from_data_frame(d = simDf, directed = FALSE, vertices = verticesDf)
+g1 <- simplify(g1, edge.attr.comb="sum")
+wtc <- cluster_walktrap(g1)
+modularity(wtc); modularity(g1, membership(wtc)) #0.455
+dfG1 <- data.frame(speeches = unclass(wtc)$names, 
+groups = unclass(wtc)$membership, stringsAsFactors = FALSE)    
+dfG2 <- inner_join(dfG1, verticesDf, by = c("speeches" = "name"))
+posNDf <- ggnetwork(g1, layout = igraph::layout.fruchterman.reingold(g1), arrow.gap=0) %>%
+setDT
+
+gcn_pos1 <- 
+ggplot(data = posNDf) +
+geom_edges(aes(x = x, y = y, xend = posNDf$xend, 
+yend = posNDf$yend, 
+alpha = avgSimilarity), colour = "grey50", curvature = 0.1, size = 1) +
+geom_nodes(aes(x = x, y = y, xend = posNDf$xend, 
+yend = posNDf$yend), colour = "springgreen1", size = 2) +
+#geom_text_repel(data = unique(posNDf[, .(x, y, speechCode)]), aes(x = x, y = y, label = speechCode), colour = "grey6",  max.overlaps=1000) +
+xlab("") + ylab("") +
+ggtitle("Консенсусная сеть речей президента Турции") +
+theme(text = element_text(family = "Garamond"),
+axis.line = element_blank(),
+axis.ticks = element_blank(),
+axis.text = element_blank(),
+panel.grid.major = element_blank(),
+panel.grid.minor = element_blank(),
+panel.border = element_blank(),
+panel.background = element_blank(),
+plot.background = element_rect(fill = "white"),
+legend.background = element_blank(),
+legend.key = element_blank(),
+legend.position = "top",
+plot.title = element_text(hjust = 0, family = "Garamond", size = rel(2), colour = "grey30")) +
+guides(alpha = guide_legend(title = "Стилистическая близость", title.position = "top", title.hjust = 1, title.vjust = 1, ticks = FALSE, direction = "horizontal", label = FALSE, keywidth = 3.1, keyheight = 1))
+
+ggsave(paste("/work/files/workspace/Stylo", "Graphs", "network1.png", sep = "/"), height = 12, width = 20, units='in', dpi = 500)
+
+
+	
