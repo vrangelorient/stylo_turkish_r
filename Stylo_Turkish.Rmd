@@ -1,5 +1,4 @@
-#install.packages("rJava")
-#Sys.setenv(JAVA_HOME="~/renv/local/Java/jre1.8.0_291")
+#Sys.setenv(JAVA_HOME="/Java/jre1.8.0_291")
 #library("rJava")
 
 pkgs <- c("purrr", "data.table", "dplyr", "tidyr", "readr", "lubridate", "stylo", "tsne", "ggplot2", "igraph", "intergraph", "ggnetwork", "stringr", "ggrepel", "ggiraph", "ggthemes", "viridisLite", "scales", "grid", "gtable", "FactoMineR", "tidytext", "wordcloud", "extrafont", "textcat", "Hmisc", "openNLP", "ggfortify", "gplots", "fpc", "dendsort", "seriation", "quanteda", "reshape2")
@@ -54,7 +53,7 @@ g1_1 <-
 data.frame(name = names(speechListClean1), speech = unlist(speechListClean1), stringsAsFactors = FALSE) %>%
 		unnest_tokens(output = word, input = speech) %>%
 		group_by(name) %>%
-		summarise(`Уникальные слова` = length(unique(word)), `Все слова` = length(word)) %>%
+		summarise(`Unique words` = length(unique(word)), `Total words` = length(word)) %>%
 		ungroup() %>%
 		gather(variable, value, -name) %>%
 		arrange(name) %>%
@@ -62,8 +61,8 @@ data.frame(name = names(speechListClean1), speech = unlist(speechListClean1), st
 		geom_bar(stat = "identity", position = "dodge") +
 		scale_fill_manual(values = c("#005A31", "#A8CD1B"), name = "") +
 		scale_y_continuous(label = comma, breaks = pretty_breaks(5), limits = c(0,8000)) +
-		xlab("Номер речи") + ylab("") +
-		ggtitle("Сколько слов президент Турции использует в своих речах?\n") +
+		xlab("Number of speech") + ylab("") +
+		ggtitle("How many words does the Turkish President use in his speeches?\n") +
 		theme_bw() +
 		theme(legend.position = c(0.09,1.027), legend.direction = "horizontal",
 			legend.text = element_text(size = rel(1.1)), 
@@ -80,7 +79,7 @@ g1_2 <-
 data.frame(name = names(speechListClean2), speech = unlist(speechListClean2), stringsAsFactors = FALSE) %>%
 		unnest_tokens(output = word, input = speech) %>%
 		group_by(name) %>%
-		summarise(`Уникальные слова` = length(unique(word)), `Все слова` = length(word)) %>%
+		summarise(`Unique words` = length(unique(word)), `Total words` = length(word)) %>%
 		ungroup() %>%
 		gather(variable, value, -name) %>%
 		arrange(name) %>%
@@ -88,8 +87,8 @@ data.frame(name = names(speechListClean2), speech = unlist(speechListClean2), st
 		geom_bar(stat = "identity", position = "dodge") +
 		scale_fill_manual(values = c("#005A31", "#A8CD1B"), name = "") +
 		scale_y_continuous(label = comma, breaks = pretty_breaks(5), limits = c(0,8000)) +
-		xlab("Номер речи") + ylab("") +
-		ggtitle("Сколько слов президент Турции использует в своих речах?\n") +
+		xlab("Number of speech") + ylab("") +
+		ggtitle("How many words does the Turkish President use in his speeches?\n") +
 		theme_bw() +
 		theme(legend.position = c(0.09,1.027), legend.direction = "horizontal",
 			legend.text = element_text(size = rel(1.1)), 
@@ -110,15 +109,15 @@ data.frame(name = names(speechListClean1), speech = unlist(speechListClean1), st
 		unnest_tokens(output = sentence, input = speech, token = "regex", pattern = "\\.") %>%
 		mutate(totalCharSentence = str_count(sentence, "\\S+")) %>%
 		group_by(name) %>%
-		summarise(`Медиана количества слов в предложении` = median(totalCharSentence), `Среднее количества слов в предложении` = mean(totalCharSentence)) %>%
+		summarise(`Median of words in a sentence` = median(totalCharSentence), `Mean of words in a sentence` = mean(totalCharSentence)) %>%
 		gather(variable, value, -name) %>%
 		arrange(name) %>%
 		ggplot(aes(x = factor(name), y = value, group = variable, colour = variable)) +
 		geom_line() +
 		scale_colour_manual(values = c("#005A31", "#A8CD1B"), name = "") +
 		scale_y_continuous(label = comma, breaks = seq(8.0, 24.0, by=2), limits = c(8.0, 24.0)) +
-		xlab("Номер речи") + ylab("") +
-		ggtitle("Сколько слов в предложениях турецкого президента?\n") +
+		xlab("Number of speech") + ylab("") +
+		ggtitle("How many words in a sentence of the Turkish President?\n") +
 		theme_bw() +
 		theme(legend.position = c(0.165,1.027), legend.direction = "horizontal",
 			legend.text = element_text(size = rel(1.1)), 
@@ -136,15 +135,15 @@ data.frame(name = names(speechListClean2), speech = unlist(speechListClean2), st
 		unnest_tokens(output = sentence, input = speech, token = "regex", pattern = "\\.") %>%
 		mutate(totalCharSentence = str_count(sentence, "\\S+")) %>%
 		group_by(name) %>%
-		summarise(`Медиана количества слов в предложении` = median(totalCharSentence), `Среднее количества слов в предложении` = mean(totalCharSentence)) %>%
+		summarise(`Median of words in a sentence` = median(totalCharSentence), `Mean of words in a sentence` = mean(totalCharSentence)) %>%
 		gather(variable, value, -name) %>%
 		arrange(name) %>%
 		ggplot(aes(x = factor(name), y = value, group = variable, colour = variable)) +
 		geom_line() +
 		scale_colour_manual(values = c("#005A31", "#A8CD1B"), name = "") +
 		scale_y_continuous(label = comma, breaks = seq(8.0, 24.0, by=2), limits = c(8.0, 24.0)) +
-		xlab("Номер речи") + ylab("") +
-		ggtitle("Сколько слов в предложениях турецкого президента?\n") +
+		xlab("Number of speech") + ylab("") +
+		ggtitle("How many words in a sentence of the Turkish President?\n") +
 		theme_bw() +
 		theme(legend.position = c(0.165,1.027), legend.direction = "horizontal",
 			legend.text = element_text(size = rel(1.1)), 
@@ -213,12 +212,10 @@ topPosDoc <- data.frame(name = names(speechListClean),
 
 posToUse <- union(topPosFreq, topPosDoc)
 
-# I need 30 features for use in dissimilarity calculation for 1st batch, cumulatively summing up to 150 total features for the final batch
 featToUse <- 30
 noOfBatch <- length(posToUse)/featToUse
 splitAt <- as.list(cumsum(rep(featToUse, times = noOfBatch)))
 
-# Function to split our data set into batches
 splitDfBatch <- function(toIncludeLen, posTags, df){
 colsInd <- seq(from = 1, by = 1, to = toIncludeLen)
 colsToUse <- gsub("\\s+", "\\.", posTags[colsInd])
@@ -289,7 +286,7 @@ geom_nodes(aes(x = x, y = y, xend = posNDf$xend,
 yend = posNDf$yend), colour = "springgreen1", size = 2) +
 #geom_text_repel(data = unique(posNDf[, .(x, y, speechCode)]), aes(x = x, y = y, label = speechCode), colour = "grey6",  max.overlaps=1000) +
 xlab("") + ylab("") +
-ggtitle("Консенсусная сеть речей президента Турции") +
+ggtitle("Consensus network of the Turkish President's speeches") +
 theme(text = element_text(family = "Garamond"),
 axis.line = element_blank(),
 axis.ticks = element_blank(),
@@ -303,7 +300,7 @@ legend.background = element_blank(),
 legend.key = element_blank(),
 legend.position = "top",
 plot.title = element_text(hjust = 0, family = "Garamond", size = rel(2), colour = "grey30")) +
-guides(alpha = guide_legend(title = "Стилистическая близость", title.position = "top", title.hjust = 1, title.vjust = 1, ticks = FALSE, direction = "horizontal", label = FALSE, keywidth = 3.1, keyheight = 1))
+guides(alpha = guide_legend(title = "Stylistic similarity", title.position = "top", title.hjust = 1, title.vjust = 1, ticks = FALSE, direction = "horizontal", label = FALSE, keywidth = 3.1, keyheight = 1))
 
 ggsave(paste("/work/files/workspace/Stylo", "Graphs", "network1.png", sep = "/"), height = 12, width = 20, units='in', dpi = 500)
 
